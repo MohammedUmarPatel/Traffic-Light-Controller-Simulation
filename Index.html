@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Light Controller Simulation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .simulation-area {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .intersection {
+            background: #333;
+            border-radius: 20px;
+            padding: 30px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .roads {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto;
+        }
+
+        .road {
+            position: absolute;
+            background: #666;
+        }
+
+        .road-horizontal {
+            width: 100%;
+            height: 60px;
+            top: 120px;
+            left: 0;
+        }
+
+        .road-vertical {
+            width: 60px;
+            height: 100%;
+            left: 120px;
+            top: 0;
+        }
+
+        .road-center {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            top: 120px;
+            left: 120px;
+            background: #555;
+        }
+
+        .traffic-light {
+            position: absolute;
+            width: 30px;
+            height: 90px;
+            background: #222;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+            padding: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .light {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #444;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .light.red.active {
+            background: radial-gradient(circle, #ff4444, #cc0000);
+            box-shadow: 0 0 20px #ff4444, inset 0 2px 4px rgba(255,255,255,0.2);
+        }
+
+        .light.yellow.active {
+            background: radial-gradient(circle, #ffdd44, #cc9900);
+            box-shadow: 0 0 20px #ffdd44, inset 0 2px 4px rgba(255,255,255,0.2);
+        }
+
+        .light.green.active {
+            background: radial-gradient(circle, #44ff44, #00cc00);
+            box-shadow: 0 0 20px #44ff44, inset 0 2px 4px rgba(255,255,255,0.2);
+        }
+
+        .traffic-light.north {
+            top: 90px;
+            left: 135px;
+        }
+
+        .traffic-light.south {
+            top: 210px;
+            left: 135px;
+            transform: rotate(180deg);
+        }
+
+        .traffic-light.east {
+            top: 135px;
+            left: 210px;
+            transform: rotate(90deg);
+        }
+
+        .traffic-light.west {
+            top: 135px;
+            left: 60px;
+            transform: rotate(-90deg);
+        }
+
+        .direction-label {
+            position: absolute;
+            font-weight: bold;
+            font-size: 0.8rem;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .direction-label.north {
+            top: 70px;
+            left: 140px;
+        }
+
+        .direction-label.south {
+            bottom: 70px;
+            left: 140px;
+        }
+
+        .direction-label.east {
+            right: 30px;
+            top: 140px;
+        }
+
+        .direction-label.west {
+            left: 30px;
+            top: 140px;
+        }
+
+        .control-panel {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .control-panel h3 {
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            text-align: center;
+        }
+
+        .button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(145deg, #4CAF50, #45a049);
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .button.emergency {
+            background: linear-gradient(145deg, #f44336, #d32f2f);
+        }
+
+        .button.pedestrian {
+            background: linear-gradient(145deg, #2196F3, #1976D2);
+        }
+
+        .button.manual {
+            background: linear-gradient(145deg, #FF9800, #F57C00);
+        }
+
+        .status-display {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 0.9rem;
+        }
+
+        .timer-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 8px;
+            color: #4CAF50;
+        }
+
+        .info-panel {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .info-panel h3 {
+            margin-bottom: 15px;
+            color: #4CAF50;
+        }
+
+        .info-panel ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .info-panel li {
+            margin: 8px 0;
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .emergency-mode {
+            animation: emergencyBlink 1s infinite;
+        }
+
+        @keyframes emergencyBlink {
+            0%, 50% { background-color: rgba(255, 0, 0, 0.2); }
+            51%, 100% { background-color: rgba(255, 255, 255, 0.1); }
+        }
+
+        .pedestrian-crossing {
+            position: absolute;
+            width: 4px;
+            height: 300px;
+            background: repeating-linear-gradient(
+                45deg,
+                white,
+                white 10px,
+                transparent 10px,
+                transparent 20px
+            );
+            left: 148px;
+            top: 0;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .pedestrian-crossing.active {
+            opacity: 0.8;
+            animation: pedestrianBlink 0.5s infinite;
+        }
+
+        @keyframes pedestrianBlink {
+            0%, 50% { opacity: 0.8; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        @media (max-width: 768px) {
+            .simulation-area {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .roads {
+                transform: scale(0.8);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚦 Traffic Light Controller Simulation</h1>
+            <p>Interactive Microprocessor-Based Traffic Management System</p>
+        </div>
+
+        <div class="simulation-area">
+            <div class="intersection">
+                <div class="roads">
+                    <div class="road road-horizontal"></div>
+                    <div class="road road-vertical"></div>
+                    <div class="road road-center"></div>
+                    
+                    <div class="pedestrian-crossing" id="pedestrianCrossing"></div>
+                    
+                    <div class="direction-label north">NORTH</div>
+                    <div class="direction-label south">SOUTH</div>
+                    <div class="direction-label east">EAST</div>
+                    <div class="direction-label west">WEST</div>
+                    
+                    <div class="traffic-light north" id="northLight">
+                        <div class="light red"></div>
+                        <div class="light yellow"></div>
+                        <div class="light green"></div>
+                    </div>
+                    
+                    <div class="traffic-light south" id="southLight">
+                        <div class="light red"></div>
+                        <div class="light yellow"></div>
+                        <div class="light green"></div>
+                    </div>
+                    
+                    <div class="traffic-light east" id="eastLight">
+                        <div class="light red"></div>
+                        <div class="light yellow"></div>
+                        <div class="light green"></div>
+                    </div>
+                    
+                    <div class="traffic-light west" id="westLight">
+                        <div class="light red"></div>
+                        <div class="light yellow"></div>
+                        <div class="light green"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-panel" id="controlPanel">
+                <h3>🎛️ Control Panel</h3>
+                
+                <div class="timer-display" id="timerDisplay">15</div>
+                
+                <button class="button" id="startBtn">▶️ Start System</button>
+                <button class="button" id="stopBtn">⏸️ Stop System</button>
+                <button class="button emergency" id="emergencyBtn">🚨 Emergency Override</button>
+                <button class="button pedestrian" id="pedestrianBtn">🚶 Pedestrian Request</button>
+                <button class="button manual" id="manualBtn">🔧 Manual Mode</button>
+                
+                <div class="status-display">
+                    <div class="status-item">
+                        <span>Current State:</span>
+                        <span id="currentState">STOPPED</span>
+                    </div>
+                    <div class="status-item">
+                        <span>System Mode:</span>
+                        <span id="systemMode">AUTOMATIC</span>
+                    </div>
+                    <div class="status-item">
+                        <span>Active Direction:</span>
+                        <span id="activeDirection">NONE</span>
+                    </div>
+                    <div class="status-item">
+                        <span>Cycle Count:</span>
+                        <span id="cycleCount">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <h3>📋 System Information</h3>
+            <ul>
+                <li><strong>Normal Cycle:</strong> North-South Green (15s) → Yellow (3s) → East-West Green (15s) → Yellow (3s)</li>
+                <li><strong>Emergency Mode:</strong> All lights turn red immediately for emergency vehicle passage</li>
+                <li><strong>Pedestrian Mode:</strong> Activates pedestrian crossing with all-red phase (8s)</li>
+                <li><strong>Manual Mode:</strong> Allows manual control of individual light phases</li>
+                <li><strong>Safety Features:</strong> Minimum 2-second all-red clearance between conflicting movements</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        class TrafficLightController {
+            constructor() {
+                this.states = {
+                    STOPPED: 'STOPPED',
+                    NS_GREEN: 'NS_GREEN',
+                    NS_YELLOW: 'NS_YELLOW',
+                    ALL_RED_1: 'ALL_RED_1',
+                    EW_GREEN: 'EW_GREEN',
+                    EW_YELLOW: 'EW_YELLOW',
+                    ALL_RED_2: 'ALL_RED_2',
+                    EMERGENCY: 'EMERGENCY',
+                    PEDESTRIAN: 'PEDESTRIAN'
+                };
+
+                this.currentState = this.states.STOPPED;
+                this.isRunning = false;
+                this.isEmergency = false;
+                this.isPedestrianRequested = false;
+                this.isManualMode = false;
+                this.cycleCount = 0;
+                this.stateTimer = 0;
+                this.maxStateTime = 0;
+
+                // Timing configurations (in seconds)
+                this.timings = {
+                    GREEN_TIME: 15,
+                    YELLOW_TIME: 3,
+                    ALL_RED_TIME: 2,
+                    EMERGENCY_TIME: 10,
+                    PEDESTRIAN_TIME: 8
+                };
+
+                this.initializeElements();
+                this.attachEventListeners();
+                this.updateDisplay();
+                this.startMainLoop();
+            }
+
+            initializeElements() {
+                this.elements = {
+                    northLight: document.getElementById('northLight'),
+                    southLight: document.getElementById('southLight'),
+                    eastLight: document.getElementById('eastLight'),
+                    westLight: document.getElementById('westLight'),
+                    pedestrianCrossing: document.getElementById('pedestrianCrossing'),
+                    controlPanel: document.getElementById('controlPanel'),
+                    timerDisplay: document.getElementById('timerDisplay'),
+                    currentState: document.getElementById('currentState'),
+                    systemMode: document.getElementById('systemMode'),
+                    activeDirection: document.getElementById('activeDirection'),
+                    cycleCount: document.getElementById('cycleCount')
+                };
+            }
+
+            attachEventListeners() {
+                document.getElementById('startBtn').addEventListener('click', () => this.startSystem());
+                document.getElementById('stopBtn').addEventListener('click', () => this.stopSystem());
+                document.getElementById('emergencyBtn').addEventListener('click', () => this.activateEmergency());
+                document.getElementById('pedestrianBtn').addEventListener('click', () => this.requestPedestrian());
+                document.getElementById('manualBtn').addEventListener('click', () => this.toggleManualMode());
+            }
+
+            startSystem() {
+                if (!this.isRunning) {
+                    this.isRunning = true;
+                    this.currentState = this.states.NS_GREEN;
+                    this.stateTimer = 0;
+                    this.maxStateTime = this.timings.GREEN_TIME;
+                    this.updateDisplay();
+                }
+            }
+
+            stopSystem() {
+                this.isRunning = false;
+                this.currentState = this.states.STOPPED;
+                this.isEmergency = false;
+                this.isPedestrianRequested = false;
+                this.clearAllLights();
+                this.updateDisplay();
+            }
+
+            activateEmergency() {
+                if (this.isRunning && !this.isEmergency) {
+                    this.isEmergency = true;
+                    this.currentState = this.states.EMERGENCY;
+                    this.stateTimer = 0;
+                    this.maxStateTime = this.timings.EMERGENCY_TIME;
+                    this.elements.controlPanel.classList.add('emergency-mode');
+                    this.updateDisplay();
+                }
+            }
+
+            requestPedestrian() {
+                if (this.isRunning && !this.isEmergency && !this.isPedestrianRequested) {
+                    this.isPedestrianRequested = true;
+                    this.updateDisplay();
+                }
+            }
+
+            toggleManualMode() {
+                this.isManualMode = !this.isManualMode;
+                this.updateDisplay();
+            }
+
+            startMainLoop() {
+                setInterval(() => {
+                    if (this.isRunning) {
+                        this.updateTimer();
+                        this.processStateMachine();
+                    }
+                    this.updateDisplay();
+                }, 1000);
+            }
+
+            updateTimer() {
+                this.stateTimer++;
+                if (this.stateTimer >= this.maxStateTime) {
+                    this.transitionToNextState();
+                }
+            }
+
+            processStateMachine() {
+                // Handle emergency priority
+                if (this.isEmergency && this.currentState !== this.states.EMERGENCY) {
+                    this.currentState = this.states.EMERGENCY;
+                    this.stateTimer = 0;
+                    this.maxStateTime = this.timings.EMERGENCY_TIME;
+                    return;
+                }
+
+                this.updateLights();
+            }
+
+            transitionToNextState() {
+                this.stateTimer = 0;
+
+                switch (this.currentState) {
+                    case this.states.NS_GREEN:
+                        this.currentState = this.states.NS_YELLOW;
+                        this.maxStateTime = this.timings.YELLOW_TIME;
+                        break;
+
+                    case this.states.NS_YELLOW:
+                        this.currentState = this.states.ALL_RED_1;
+                        this.maxStateTime = this.timings.ALL_RED_TIME;
+                        break;
+
+                    case this.states.ALL_RED_1:
+                        if (this.isPedestrianRequested) {
+                            this.currentState = this.states.PEDESTRIAN;
+                            this.maxStateTime = this.timings.PEDESTRIAN_TIME;
+                            this.isPedestrianRequested = false;
+                        } else {
+                            this.currentState = this.states.EW_GREEN;
+                            this.maxStateTime = this.timings.GREEN_TIME;
+                        }
+                        break;
+
+                    case this.states.PEDESTRIAN:
+                        this.currentState = this.states.EW_GREEN;
+                        this.maxStateTime = this.timings.GREEN_TIME;
+                        break;
+
+                    case this.states.EW_GREEN:
+                        this.currentState = this.states.EW_YELLOW;
+                        this.maxStateTime = this.timings.YELLOW_TIME;
+                        break;
+
+                    case this.states.EW_YELLOW:
+                        this.currentState = this.states.ALL_RED_2;
+                        this.maxStateTime = this.timings.ALL_RED_TIME;
+                        break;
+
+                    case this.states.ALL_RED_2:
+                        this.currentState = this.states.NS_GREEN;
+                        this.maxStateTime = this.timings.GREEN_TIME;
+                        this.cycleCount++;
+                        break;
+
+                    case this.states.EMERGENCY:
+                        this.isEmergency = false;
+                        this.elements.controlPanel.classList.remove('emergency-mode');
+                        this.currentState = this.states.NS_GREEN;
+                        this.maxStateTime = this.timings.GREEN_TIME;
+                        break;
+                }
+            }
+
+            updateLights() {
+                this.clearAllLights();
+
+                const lights = {
+                    north: this.elements.northLight.children,
+                    south: this.elements.southLight.children,
+                    east: this.elements.eastLight.children,
+                    west: this.elements.westLight.children
+                };
+
+                switch (this.currentState) {
+                    case this.states.NS_GREEN:
+                        lights.north[2].classList.add('active'); // Green
+                        lights.south[2].classList.add('active'); // Green
+                        lights.east[0].classList.add('active');  // Red
+                        lights.west[0].classList.add('active');  // Red
+                        break;
+
+                    case this.states.NS_YELLOW:
+                        lights.north[1].classList.add('active'); // Yellow
+                        lights.south[1].classList.add('active'); // Yellow
+                        lights.east[0].classList.add('active');  // Red
+                        lights.west[0].classList.add('active');  // Red
+                        break;
+
+                    case this.states.EW_GREEN:
+                        lights.north[0].classList.add('active'); // Red
+                        lights.south[0].classList.add('active'); // Red
+                        lights.east[2].classList.add('active');  // Green
+                        lights.west[2].classList.add('active');  // Green
+                        break;
+
+                    case this.states.EW_YELLOW:
+                        lights.north[0].classList.add('active'); // Red
+                        lights.south[0].classList.add('active'); // Red
+                        lights.east[1].classList.add('active');  // Yellow
+                        lights.west[1].classList.add('active');  // Yellow
+                        break;
+
+                    case this.states.ALL_RED_1:
+                    case this.states.ALL_RED_2:
+                    case this.states.EMERGENCY:
+                    case this.states.PEDESTRIAN:
+                        lights.north[0].classList.add('active'); // All Red
+                        lights.south[0].classList.add('active');
+                        lights.east[0].classList.add('active');
+                        lights.west[0].classList.add('active');
+                        break;
+                }
+
+                // Handle pedestrian crossing
+                if (this.currentState === this.states.PEDESTRIAN) {
+                    this.elements.pedestrianCrossing.classList.add('active');
+                } else {
+                    this.elements.pedestrianCrossing.classList.remove('active');
+                }
+            }
+
+            clearAllLights() {
+                const allLights = document.querySelectorAll('.light');
+                allLights.forEach(light => light.classList.remove('active'));
+            }
+
+            updateDisplay() {
+                const remainingTime = Math.max(0, this.maxStateTime - this.stateTimer);
+                this.elements.timerDisplay.textContent = remainingTime;
+
+                this.elements.currentState.textContent = this.currentState.replace('_', ' ');
+                
+                let mode = 'AUTOMATIC';
+                if (this.isEmergency) mode = 'EMERGENCY';
+                else if (this.isManualMode) mode = 'MANUAL';
+                else if (this.isPedestrianRequested) mode = 'PEDESTRIAN REQUESTED';
+                this.elements.systemMode.textContent = mode;
+
+                let activeDir = 'NONE';
+                if (this.currentState.includes('NS')) activeDir = 'NORTH-SOUTH';
+                else if (this.currentState.includes('EW')) activeDir = 'EAST-WEST';
+                else if (this.currentState === this.states.PEDESTRIAN) activeDir = 'PEDESTRIAN';
+                this.elements.activeDirection.textContent = activeDir;
+
+                this.elements.cycleCount.textContent = this.cycleCount;
+            }
+        }
+
+        // Initialize the traffic light controller when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new TrafficLightController();
+        });
+    </script>
+</body>
+  </html>
